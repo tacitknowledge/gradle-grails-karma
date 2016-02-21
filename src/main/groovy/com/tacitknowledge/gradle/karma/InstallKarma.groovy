@@ -31,7 +31,9 @@ class InstallKarma extends NpmTask
   }
 
   void executeGlobally(Closure closure) {
-    def random = new RandomAccessFile(new File(project.node.nodeModulesDir, "node_modules_lock"), 'rw')
+    def npmUserFolder = new File(System.properties['user.home'], '.npm')
+    npmUserFolder.mkdirs()
+    def random = new RandomAccessFile(new File(npmUserFolder, 'node_modules_lock'), 'rw')
     def lock = null
 
     for(i in (1..3)){

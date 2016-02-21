@@ -1,6 +1,7 @@
 package com.tacitknowledge.gradle.karma
 
 import com.moowork.gradle.node.task.NpmTask
+import org.gradle.tooling.BuildException
 
 class InstallKarma extends NpmTask
 {
@@ -18,6 +19,41 @@ class InstallKarma extends NpmTask
 
       (['karma'] + project.karma.additionalNodeDependencies?.collect {k,v->k}).each {
         outputs.dir new File(project.node.nodeModulesDir, "node_modules/$it")
+      }
+    }
+  }
+
+  @Override
+  void exec() {
+    executeGlobally {
+      super.exec()
+    }
+  }
+
+  void executeGlobally(Closure closure) {
+    def random = new RandomAccessFile(new File(project.node.nodeModulesDir, "node_modules_lock"), 'rw')
+    def lock = null
+
+    for(i in (1..3)){
+     try {
+       lock = random.channel.tryLock()
+       break;
+     } catch (Exception) {
+       logger.warn("Can't acquire lock. Waiting 60s before attempt nr ${i+1}.")
+       Thread.sleep(60000)
+     }
+    }
+
+    if(!lock) {
+      throw new IllegalStateException("Can't acquire exclusive lock to setup karma")
+    }
+
+    try{
+      closure.run()
+    } finally {
+      if(lock) {
+        lock.release()
+        random.close()
       }
     }
   }

@@ -1,7 +1,6 @@
 package com.tacitknowledge.gradle.karma
 
 import com.moowork.gradle.node.task.NpmTask
-import org.gradle.tooling.BuildException
 
 class InstallKarma extends NpmTask
 {
@@ -25,12 +24,12 @@ class InstallKarma extends NpmTask
 
   @Override
   void exec() {
-    executeGlobally {
+    executeExclusively {
       super.exec()
     }
   }
 
-  void executeGlobally(Closure closure) {
+  void executeExclusively(Closure closure) {
     def npmUserFolder = new File(System.properties['user.home'], '.npm')
     npmUserFolder.mkdirs()
     def random = new RandomAccessFile(new File(npmUserFolder, 'node_modules_lock'), 'rw')
@@ -38,11 +37,12 @@ class InstallKarma extends NpmTask
 
     for(i in (1..3)){
      try {
+       logger.info("Trying to acquire lock to install karma. Attampt nr $i.")
        lock = random.channel.tryLock()
        break;
      } catch (Exception) {
        logger.warn("Can't acquire lock. Waiting 60s before attempt nr ${i+1}.")
-       Thread.sleep(60000)
+       sleep(60000)
      }
     }
 

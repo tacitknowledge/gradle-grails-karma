@@ -35,15 +35,15 @@ class InstallKarma extends NpmTask
     def random = new RandomAccessFile(new File(npmUserFolder, 'node_modules_lock'), 'rw')
     def lock = null
 
-    for (int i = 0; i < 3; i++) {
+    for (i in (1..5)) {
       try {
-        logger.info("Trying to acquire lock to install karma. Attampt nr $i.")
+        logger.info("Trying to acquire lock to install karma. Attempt nr $i.")
         lock = random.channel.tryLock()
       } catch (ignore) { /*noop*/ }
       if(lock) {
         break
       } else {
-        logger.warn('Sleeping before the next attempt')
+        logger.warn("Attempt nr $i was unsuccessful. Sleeping 1min before the next attempt")
         sleep(60000)
       }
     }

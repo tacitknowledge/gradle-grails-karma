@@ -4,21 +4,21 @@ import com.moowork.gradle.node.task.NpmTask
 
 class InstallKarma extends NpmTask
 {
-  InstallKarma()
-  {
+  InstallKarma() {
     group = 'Karma'
     description = 'Installs karma bin (node) into project'
 
-    project.afterEvaluate{
+    project.afterEvaluate {
       workingDir = project.node.nodeModulesDir
 
       def pkgName = project.karma.version ? "karma@${project.karma.version}" : 'karma'
       args = ['install', pkgName]
-      args += project.karma.additionalNodeDependencies?.collect { k,v -> "$k@$v" } ?: [:]
+      args += project.karma.additionalNodeDependencies?.collect { k, v -> "$k@$v" } ?: [:]
 
-      (['karma'] + project.karma.additionalNodeDependencies?.collect {k,v->k}).each {
-        outputs.dir new File(project.node.nodeModulesDir, "node_modules/$it")
-      }
+      List<File> moduleDirs = (['karma'] + project.karma.additionalNodeDependencies?.keySet()).
+          collect { new File(project.node.nodeModulesDir, "node_modules/$it") }
+      moduleDirs.each { outputs.dir it }
+      enabled = !moduleDirs.every { it.exists() }
     }
   }
 
@@ -40,7 +40,7 @@ class InstallKarma extends NpmTask
         logger.info("Trying to acquire lock to install karma. Attempt nr $i.")
         lock = random.channel.tryLock()
       } catch (ignore) { /*noop*/ }
-      if(lock) {
+      if (lock) {
         break
       } else {
         logger.warn("Attempt nr $i was unsuccessful. Sleeping 1min before the next attempt")
@@ -48,14 +48,14 @@ class InstallKarma extends NpmTask
       }
     }
 
-    if(!lock) {
+    if (!lock) {
       throw new IllegalStateException("Can't acquire exclusive lock to setup karma")
     }
 
-    try{
+    try {
       closure.run()
     } finally {
-      if(lock) {
+      if (lock) {
         lock.release()
         random.close()
       }
